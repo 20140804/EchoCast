@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoCast · 漂流信</title>
+    <!-- Leaflet 地图库 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Bootstrap 美化 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { margin: 20px; background: #f0f7ff; }
+        #map { height: 400px; width: 100%; margin-top: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .poem-box { margin-top: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 100px; }
+        .btn-primary { background: #1e90ff; border: none; }
+        .btn-primary:hover { background: #1c86ee; }
+        h1 { color: #2c3e50; }
+        .footer-link { color: #999; text-decoration: none; font-size: 0.8rem; }
+        .footer-link:hover { color: #666; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center">🌊 EchoCast · 漂流信</h1>
+    <p class="text-center text-muted">写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海</p>
+
+    <div class="row">
+        <div class="col-md-6">
+            <textarea id="inputText" class="form-control" rows="3" placeholder="此刻，你最想对世界说什么？"></textarea>
+            <div class="mt-2">
+                <button id="submitBtn" class="btn btn-primary">投入大海</button>
+                <button id="pickBtn" class="btn btn-secondary">捡起一个瓶子</button>
+            </div>
+            <div class="poem-box">
+                <strong>📜 你捡到的诗：</strong><br>
+                <span id="poemContent" style="font-size: 1.1rem; color: #2c3e50;">点击“捡起一个瓶子”试试</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- 关闭服务的链接（无黑框模式下使用） -->
+    <div class="text-center mt-4">
+        <a href="/shutdown" class="footer-link">点击此处关闭服务</a>
+    </div>
+</div>
+
+<script>
+    // 初始化世界地图
+    var map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var marker = null;
+
+    function displayMessage(data) {
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        document.getElementById('poemContent').innerText = data.poem || '（空）';
+        if (data.lat && data.lng) {
+            marker = L.marker([data.lat, data.lng]).addTo(map)
+                .bindPopup(data.poem || '漂流信')
+                .openPopup();
+            map.setView([data.lat, data.lng], 5);
+        }
+    }
+
+    function pickRandom() {
+        fetch('/random')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayMessage(data);
+                }
+            })
+            .catch(err => alert('出错啦：' + err));
+    }
+
+    function submitMessage() {
+        var text = document.getElementById('inputText').value.trim();
+        if (!text) {
+            alert('写点什么再扔吧');
+            return;
+        }
+        fetch('/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('✨ 你的信已变成诗，漂向大海！');
+                document.getElementById('inputText').value = '';
+                displayMessage(data);
+            }
+        })
+        .catch(err => alert('出错啦：' + err));
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', submitMessage);
+    document.getElementById('pickBtn').addEventListener('click', pickRandom);
+
+    // 页面一打开自动捞一个
+    window.onload = pickRandom;
+</script>
+</body>
+</html>
