@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EchoCast · 漂流信</title>
+    <!-- Leaflet 地图库 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- html2canvas 用于导出图片 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         html, body {
@@ -67,13 +70,17 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             min-height: 10vh;
             overflow-y: auto;
+            position: relative;
         }
-        .poem-box strong { font-size: clamp(13px, 1.5vh, 18px); }
+        .poem-box strong {
+            font-size: clamp(13px, 1.5vh, 18px);
+        }
         .poem-box #poemContent {
             font-size: clamp(14px, 1.8vh, 22px);
             color: #2c3e50;
             display: block;
             margin-top: 0.5vh;
+            white-space: pre-wrap;
         }
         #map {
             flex: 1 1 auto;
@@ -86,6 +93,7 @@
             display: flex;
             gap: 0.8vw;
             flex-wrap: wrap;
+            align-items: center;
         }
         .btn-group .btn { flex: 0 1 auto; }
         .footer-link {
@@ -95,6 +103,49 @@
         }
         .footer-link:hover { color: #666; }
         .mt-auto { margin-top: auto; }
+        .pro-badge {
+            background: #ffd700;
+            color: #000;
+            padding: 0.2vh 1vw;
+            border-radius: 20px;
+            font-size: clamp(10px, 1.2vh, 14px);
+            font-weight: bold;
+            display: inline-block;
+            margin-left: 1vw;
+        }
+        .pro-controls {
+            display: none;
+            gap: 0.5vw;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .pro-controls select {
+            padding: 0.3vh 0.5vw;
+            font-size: clamp(12px, 1.3vh, 16px);
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        .poem-actions {
+            display: none;
+            gap: 0.5vw;
+            margin-top: 0.5vh;
+            flex-wrap: wrap;
+        }
+        #historyPanel {
+            display: none;
+            margin-top: 1vh;
+            padding: 1vh 1vw;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 20vh;
+            overflow-y: auto;
+            font-size: clamp(12px, 1.2vh, 15px);
+        }
+        #historyPanel .history-item {
+            border-bottom: 1px solid #eee;
+            padding: 0.5vh 0;
+        }
 
         /* 引导弹窗样式 */
         #apiGuideOverlay {
@@ -110,9 +161,7 @@
             z-index: 9999;
             backdrop-filter: blur(4px);
         }
-        #apiGuideOverlay.active {
-            display: flex;
-        }
+        #apiGuideOverlay.active { display: flex; }
         .guide-card {
             background: white;
             border-radius: 20px;
@@ -182,8 +231,8 @@
 </head>
 <body>
 <div class="container-fluid">
-    <h1 class="text-center">🌊 EchoCast · 漂流信</h1>
-    <p class="text-center text-muted subtitle">写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海</p>
+    <h1 id="title">🌊 EchoCast · 漂流信 <span class="pro-badge" id="proBadge" style="display:none;">PRO</span></h1>
+    <p id="subtitle" class="text-center text-muted subtitle">写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海</p>
 
     <div class="row">
         <div class="col-left">
@@ -191,10 +240,33 @@
             <div class="btn-group">
                 <button id="submitBtn" class="btn btn-primary">投入大海</button>
                 <button id="pickBtn" class="btn btn-secondary">捡起一个瓶子</button>
+                <button id="historyToggleBtn" class="btn btn-outline-info" style="display:none;">📜 我的漂流史</button>
             </div>
-            <div class="poem-box">
-                <strong>📜 你捡到的诗：</strong>
+            <!-- Pro 控件：语言 + 风格 -->
+            <div id="proControls" class="pro-controls">
+                <select id="langSelect">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                </select>
+                <select id="styleSelect">
+                    <option value="default">默认风格</option>
+                    <option value="chinese">🏮 中国风</option>
+                    <option value="modern">🌆 现代诗</option>
+                    <option value="haiku">🍃 俳句</option>
+                </select>
+            </div>
+            <div class="poem-box" id="poemBox">
+                <strong id="poemLabel">📜 你捡到的诗：</strong>
                 <span id="poemContent">点击“捡起一个瓶子”试试</span>
+                <div id="poemActions" class="poem-actions">
+                    <button id="copyBtn" class="btn btn-sm btn-outline-primary">📋 复制</button>
+                    <button id="exportBtn" class="btn btn-sm btn-outline-success">🖼️ 导出图片</button>
+                </div>
+            </div>
+            <!-- 历史记录面板 -->
+            <div id="historyPanel">
+                <strong>📜 我的漂流史</strong>
+                <div id="historyList"></div>
             </div>
         </div>
         <div class="col-right">
@@ -214,7 +286,6 @@
         <p style="color: #6c757d; font-size: clamp(13px, 1.4vh, 17px);">
             EchoCast 使用智谱 AI 的 <strong>永久免费</strong> 模型，只需 2 分钟注册即可获取密钥。
         </p>
-
         <div class="step">
             <div><span class="num">1</span> 访问 <a href="https://open.bigmodel.cn/" target="_blank">智谱AI开放平台</a> 注册账号</div>
         </div>
@@ -230,7 +301,6 @@
         <div class="step" style="border-left-color: #28a745;">
             <div><span class="num" style="background:#28a745;">✓</span> 保存文件后，点击下方按钮重新连接</div>
         </div>
-
         <button class="btn btn-primary" onclick="checkApiAndReload()">🔄 已配置，重新连接</button>
         <button class="btn btn-outline-secondary btn-sm" style="width:100%;" onclick="copyExample()">📋 复制 .env 示例内容</button>
         <div class="hint">
@@ -241,16 +311,46 @@
 </div>
 
 <script>
-    // 初始化地图
-    var map = L.map('map', { center: [20, 0], zoom: 2 });
+    // ---------- 国际化文本 ----------
+    var i18n = {
+        'zh': {
+            title: '🌊 EchoCast · 漂流信',
+            subtitle: '写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海',
+            placeholder: '此刻，你最想对世界说什么？',
+            submitBtn: '投入大海',
+            pickBtn: '捡起一个瓶子',
+            poemLabel: '📜 你捡到的诗：',
+            historyToggle: '📜 我的漂流史',
+            noHistory: '你还没有扔过瓶子呢',
+            copySuccess: '✅ 已复制到剪贴板',
+            exportSuccess: '✅ 图片已导出',
+            exportFail: '❌ 导出失败，请重试'
+        },
+        'en': {
+            title: '🌊 EchoCast · Echo Drift',
+            subtitle: 'Write your thought, AI turns it into poetry and casts it into the world\'s ocean',
+            placeholder: 'What do you want to say to the world right now?',
+            submitBtn: 'Cast into the Sea',
+            pickBtn: 'Pick a Bottle',
+            poemLabel: '📜 Poem you found:',
+            historyToggle: '📜 My History',
+            noHistory: 'You haven\'t thrown any bottles yet',
+            copySuccess: '✅ Copied to clipboard',
+            exportSuccess: '✅ Image exported',
+            exportFail: '❌ Export failed, please retry'
+        }
+    };
+
+    var currentLang = 'zh';
+    var isPro = false;
+    var map, marker;
+
+    // ---------- 地图初始化 ----------
+    map = L.map('map', { center: [20, 0], zoom: 2 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    var marker = null;
-    var apiAvailable = false;
-
-    // 窗口变化时刷新地图
     window.addEventListener('resize', function() {
         setTimeout(function() { map.invalidateSize(); }, 100);
     });
@@ -265,8 +365,169 @@
             map.setView([data.lat, data.lng], 5);
             setTimeout(function() { map.invalidateSize(); }, 200);
         }
+        // 更新复制/导出按钮的显示（如果有诗句）
+        var actions = document.getElementById('poemActions');
+        if (isPro && data.poem && data.poem !== '（空）') {
+            actions.style.display = 'flex';
+        } else {
+            actions.style.display = 'none';
+        }
     }
 
+    // ---------- UI 更新 ----------
+    function updateUI(lang) {
+        var texts = i18n[lang] || i18n['zh'];
+        document.getElementById('title').innerHTML = texts.title + (isPro ? ' <span class="pro-badge">PRO</span>' : '');
+        document.getElementById('subtitle').innerText = texts.subtitle;
+        document.getElementById('inputText').placeholder = texts.placeholder;
+        document.getElementById('submitBtn').innerText = texts.submitBtn;
+        document.getElementById('pickBtn').innerText = texts.pickBtn;
+        document.getElementById('poemLabel').innerText = texts.poemLabel;
+        document.getElementById('historyToggleBtn').innerText = texts.historyToggle;
+    }
+
+    // ---------- Pro 功能：复制 ----------
+    document.getElementById('copyBtn')?.addEventListener('click', function() {
+        var text = document.getElementById('poemContent').innerText;
+        if (text && text !== '（空）') {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(i18n[currentLang].copySuccess);
+            }).catch(() => {
+                // fallback
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert(i18n[currentLang].copySuccess);
+            });
+        }
+    });
+
+    // ---------- Pro 功能：导出图片 ----------
+    document.getElementById('exportBtn')?.addEventListener('click', function() {
+        var poemText = document.getElementById('poemContent').innerText;
+        if (!poemText || poemText === '（空）') {
+            alert('没有诗句可导出');
+            return;
+        }
+        // 用 html2canvas 截图诗句区域
+        var target = document.getElementById('poemBox');
+        html2canvas(target, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            allowTaint: false,
+            useCORS: true
+        }).then(canvas => {
+            var link = document.createElement('a');
+            link.download = 'EchoCast_poem.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            alert(i18n[currentLang].exportSuccess);
+        }).catch(err => {
+            console.error(err);
+            alert(i18n[currentLang].exportFail);
+        });
+    });
+
+    // ---------- 历史记录（localStorage） ----------
+    function saveHistory(poem, lat, lng, lang, style) {
+        if (!isPro) return;
+        var history = JSON.parse(localStorage.getItem('echocast_history') || '[]');
+        history.unshift({
+            poem: poem,
+            lat: lat,
+            lng: lng,
+            lang: lang,
+            style: style,
+            time: new Date().toISOString()
+        });
+        if (history.length > 50) history.pop(); // 只保留最近50条
+        localStorage.setItem('echocast_history', JSON.stringify(history));
+    }
+
+    function renderHistory() {
+        var list = document.getElementById('historyList');
+        var history = JSON.parse(localStorage.getItem('echocast_history') || '[]');
+        if (history.length === 0) {
+            list.innerHTML = '<div class="history-item">' + i18n[currentLang].noHistory + '</div>';
+            return;
+        }
+        list.innerHTML = history.map(item => {
+            var time = new Date(item.time).toLocaleString();
+            return `<div class="history-item">${time} - ${item.poem.substring(0, 30)}${item.poem.length > 30 ? '...' : ''}</div>`;
+        }).join('');
+    }
+
+    document.getElementById('historyToggleBtn')?.addEventListener('click', function() {
+        var panel = document.getElementById('historyPanel');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+        } else {
+            renderHistory();
+            panel.style.display = 'block';
+        }
+    });
+
+    // ---------- API 调用 ----------
+    function pickRandom() {
+        fetch('/random')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('poemContent').innerText = '⚠️ ' + data.error;
+                    document.getElementById('poemActions').style.display = 'none';
+                } else {
+                    displayMessage(data);
+                }
+            })
+            .catch(err => {
+                document.getElementById('poemContent').innerText = '⚠️ 网络错误，请重试';
+                document.getElementById('poemActions').style.display = 'none';
+            });
+    }
+
+    function submitMessage() {
+        var text = document.getElementById('inputText').value.trim();
+        if (!text) {
+            alert('写点什么再扔吧 / Please write something');
+            return;
+        }
+        var lang = document.getElementById('langSelect').value;
+        var style = document.getElementById('styleSelect').value;
+        // 如果不是 Pro，强制使用默认
+        if (!isPro) {
+            lang = 'zh';
+            style = 'default';
+        }
+        fetch('/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ text: text, lang: lang, style: style })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert('⚠️ ' + data.error);
+                if (data.error.includes('API') || data.error.includes('密钥')) {
+                    document.getElementById('apiGuideOverlay').classList.add('active');
+                }
+            } else {
+                alert('✨ ' + (currentLang === 'zh' ? '你的信已变成诗，漂向大海！' : 'Your letter has become a poem, drifting into the sea!'));
+                document.getElementById('inputText').value = '';
+                displayMessage(data);
+                // 保存历史（Pro）
+                if (isPro) {
+                    saveHistory(data.poem, data.lat, data.lng, lang, style);
+                }
+            }
+        })
+        .catch(err => alert('出错啦 / Error: ' + err));
+    }
+
+    // ---------- 检测 API 和 Pro 状态 ----------
     function checkApiAndReload() {
         document.getElementById('apiGuideOverlay').classList.remove('active');
         window.location.reload();
@@ -277,88 +538,74 @@
         navigator.clipboard.writeText(text).then(() => {
             alert('✅ 已复制到剪贴板，请粘贴到 .env 文件中');
         }).catch(() => {
-            // 降级方案
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
             document.execCommand('copy');
-            document.body.removeChild(textarea);
+            document.body.removeChild(ta);
             alert('✅ 已复制到剪贴板，请粘贴到 .env 文件中');
         });
     }
 
-    // ---------- 启动时检测 API ----------
     function init() {
+        // 检测 API
         fetch('/check_api')
             .then(res => res.json())
             .then(data => {
-                if (data.available) {
-                    apiAvailable = true;
-                    // 正常加载，自动捞一个
-                    pickRandom();
-                } else {
-                    // 显示引导弹窗
+                if (!data.available) {
                     document.getElementById('apiGuideOverlay').classList.add('active');
                 }
             })
             .catch(() => {
-                // 网络错误时也显示弹窗
                 document.getElementById('apiGuideOverlay').classList.add('active');
             });
-    }
 
-    function pickRandom() {
-        fetch('/random')
+        // 检测 Pro
+        fetch('/check_pro')
             .then(res => res.json())
             .then(data => {
-                if (data.error) {
-                    document.getElementById('poemContent').innerText = '⚠️ ' + data.error;
+                isPro = data.isPro;
+                if (isPro) {
+                    document.getElementById('proBadge').style.display = 'inline-block';
+                    document.getElementById('proControls').style.display = 'flex';
+                    document.getElementById('poemActions').style.display = 'flex';
+                    document.getElementById('historyToggleBtn').style.display = 'inline-block';
                 } else {
-                    displayMessage(data);
+                    document.getElementById('proBadge').style.display = 'none';
+                    document.getElementById('proControls').style.display = 'none';
+                    document.getElementById('poemActions').style.display = 'none';
+                    document.getElementById('historyToggleBtn').style.display = 'none';
                 }
+                // 更新界面语言（默认中文）
+                updateUI('zh');
+                currentLang = 'zh';
+                // 语言切换事件
+                document.getElementById('langSelect').addEventListener('change', function() {
+                    var lang = this.value;
+                    currentLang = lang;
+                    updateUI(lang);
+                    // 如果切换语言，同时更新历史面板文本（如果已打开）
+                    if (document.getElementById('historyPanel').style.display === 'block') {
+                        renderHistory();
+                    }
+                });
+                // 加载完成后自动捞一个
+                pickRandom();
             })
-            .catch(err => {
-                document.getElementById('poemContent').innerText = '⚠️ 网络错误，请重试';
+            .catch(() => {
+                // 若检测失败，默认为免费版
+                isPro = false;
+                updateUI('zh');
+                pickRandom();
             });
     }
 
-    function submitMessage() {
-        if (!apiAvailable) {
-            alert('⚠️ API 未配置，请先配置 ZHIPU_API_KEY');
-            document.getElementById('apiGuideOverlay').classList.add('active');
-            return;
-        }
-        var text = document.getElementById('inputText').value.trim();
-        if (!text) {
-            alert('写点什么再扔吧');
-            return;
-        }
-        fetch('/submit', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({text: text})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                alert('⚠️ ' + data.error);
-                if (data.error.includes('API') || data.error.includes('密钥')) {
-                    document.getElementById('apiGuideOverlay').classList.add('active');
-                }
-            } else {
-                alert('✨ 你的信已变成诗，漂向大海！');
-                document.getElementById('inputText').value = '';
-                displayMessage(data);
-            }
-        })
-        .catch(err => alert('出错啦：' + err));
-    }
-
+    // ---------- 事件绑定 ----------
     document.getElementById('submitBtn').addEventListener('click', submitMessage);
     document.getElementById('pickBtn').addEventListener('click', pickRandom);
 
-    // 页面加载后先检测
+    // ---------- 启动 ----------
     window.onload = function() {
         init();
         setTimeout(function() { map.invalidateSize(); }, 500);

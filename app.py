@@ -73,6 +73,28 @@ except Exception as e:
     logging.error(f"OpenAI 客户端初始化失败: {e}")
     client = None
 
+# ---------- 许可证验证（Pro 版） ----------
+LICENSE_FILE = os.path.join(EXE_DIR, 'license.key')
+is_pro = False
+
+def check_license():
+    global is_pro
+    if os.path.exists(LICENSE_FILE):
+        try:
+            with open(LICENSE_FILE, 'r') as f:
+                content = f.read().strip()
+                if "ECHOCAST_PRO" in content:
+                    is_pro = True
+                    logging.info("✅ Pro 许可证验证通过")
+                    return True
+        except Exception as e:
+            logging.warning(f"许可证文件读取失败: {e}")
+    is_pro = False
+    logging.info("ℹ️ 当前为免费版")
+    return False
+
+check_license()
+
 # ---------- 数据库 ----------
 def get_db_path():
     user_docs = os.path.join(os.environ['USERPROFILE'], 'Documents', 'EchoCast')
@@ -123,7 +145,6 @@ def check_api():
             'message': '未配置 ZHIPU_API_KEY，请先注册并配置密钥'
         })
     
-    # 尝试调用 API 验证密钥是否有效
     try:
         test_response = client.chat.completions.create(
             model='glm-4-flash',
@@ -144,26 +165,57 @@ def check_api():
                 'message': f'API 连接失败: {error_msg[:100]}'
             })
 
+@app.route('/check_pro')
+def check_pro():
+    """返回 Pro 状态"""
+    return jsonify({'isPro': is_pro})
+
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
         data = request.get_json()
         original = data.get('text', '').strip()
+        lang = data.get('lang', 'zh')      # 'zh' 或 'en'
+        style = data.get('style', 'default')
+
         if not original:
             return jsonify({'error': '内容不能为空'}), 400
+
+        # ---------- 根据语言和风格动态构建提示词 ----------
+        system_prompts = {
+            'zh': {
+                'default': '你是一个诗人，请将用户输入的内容改写成一首简短而有诗意的中文诗歌，不超过50字。',
+                'chinese': '你是一个古典诗人，请将用户输入的内容改写成一首古风中文诗歌，可包含古典意象，不超过50字。',
+                'modern': '你是一个现代诗人，请将用户输入的内容改写成一首现代中文诗歌，风格自由，不超过50字。',
+                'haiku': '你是一个俳句诗人，请将用户输入的内容改写成一首中文俳句（5-7-5音节结构）。'
+            },
+            'en': {
+                'default': 'You are a poet. Rewrite the user\'s input into a short, poetic English poem, no more than 50 words.',
+                'chinese': 'You are a poet. Write an English poem inspired by classical Chinese poetry style, no more than 50 words.',
+                'modern': 'You are a modern poet. Write a free-style English poem based on the user\'s input, no more than 50 words.',
+                'haiku': 'You are a haiku poet. Write an English haiku (5-7-5 syllable structure) based on the user\'s input.'
+            }
+        }
+
+        # 如果是免费版，强制使用中文默认风格（除非用户已配置 Pro）
+        if not is_pro:
+            lang = 'zh'
+            style = 'default'
+
+        system_prompt = system_prompts.get(lang, system_prompts['zh']).get(style, system_prompts['zh']['default'])
 
         if client is not None:
             try:
                 response = client.chat.completions.create(
                     model='glm-4-flash',
                     messages=[
-                        {'role': 'system', 'content': '你是一个诗人，请将用户输入的内容改写成一首简短而有诗意的中文诗歌，不超过50字。'},
+                        {'role': 'system', 'content': system_prompt},
                         {'role': 'user', 'content': original}
                     ],
-                    max_tokens=100
+                    max_tokens=200
                 )
                 poem = response.choices[0].message.content.strip()
-                logging.info(f"AI 生成成功: {poem[:20]}...")
+                logging.info(f"AI 生成成功 ({lang}/{style}): {poem[:30]}...")
             except Exception as e:
                 logging.error(f"AI 调用失败: {e}")
                 poem = original
@@ -171,6 +223,7 @@ def submit():
             poem = original
             logging.warning("客户端未初始化，使用原文")
 
+        # 生成随机位置
         lat = random.uniform(-90, 90)
         lng = random.uniform(-180, 180)
         timestamp = datetime.now().isoformat()
@@ -229,7 +282,6 @@ if __name__ == '__main__':
     thread.start()
     logging.info("Flask 服务器已启动于 http://127.0.0.1:5000")
 
-    # 等待服务器就绪
     time.sleep(1.5)
 
     # ---------- 启用 Qt 高 DPI 缩放 ----------
@@ -239,7 +291,6 @@ if __name__ == '__main__':
     qt_app = QApplication(sys.argv)
     qt_app.setStyleSheet("QMainWindow { background: #f0f7ff; }")
 
-    # 根据屏幕尺寸自适应窗口大小（默认占屏幕 75% 宽度，80% 高度）
     screen = qt_app.primaryScreen()
     screen_size = screen.availableGeometry()
     win_width = int(screen_size.width() * 0.75)
