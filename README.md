@@ -169,7 +169,9 @@ This project is licensed under the [MIT License](LICENSE) – you are free to us
 ---
 ## If you want to talk with me about the features, Welcome!! 
 Offical Email: EchoCast_Offical@hotmail.com
-## If you want to Buy Pro version, please send an email to this:
+## If you want to Buy Pro version, please send an email to this
 Buy Pro Version Email:EchoCast_BuyPro@outlook.com
+
 ---
+
 **May you encounter the softness from the other side of the world in EchoCast.** 🌊
