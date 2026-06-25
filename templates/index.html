@@ -4,70 +4,308 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EchoCast · 漂流信</title>
-    <!-- Leaflet 地图库 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Bootstrap 美化 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { margin: 20px; background: #f0f7ff; }
-        #map { height: 400px; width: 100%; margin-top: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .poem-box { margin-top: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height: 100px; }
-        .btn-primary { background: #1e90ff; border: none; }
-        .btn-primary:hover { background: #1c86ee; }
-        h1 { color: #2c3e50; }
-        .footer-link { color: #999; text-decoration: none; font-size: 0.8rem; }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f0f7ff;
+            font-size: clamp(12px, 1.2vh, 18px);
+        }
+        .container-fluid {
+            width: 100%;
+            height: 100vh;
+            padding: 1.5vh 2vw;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: clamp(24px, 4vh, 48px);
+            margin-bottom: 0.5vh;
+            color: #2c3e50;
+        }
+        .subtitle {
+            font-size: clamp(12px, 1.6vh, 20px);
+            margin-bottom: 1.5vh;
+        }
+        .row {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1vw;
+            min-height: 0;
+        }
+        .col-left, .col-right {
+            flex: 1 1 45%;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+        }
+        .col-right { flex: 1 1 50%; }
+        textarea.form-control {
+            flex: 0 0 auto;
+            height: 18vh;
+            font-size: clamp(14px, 1.6vh, 20px);
+            resize: vertical;
+        }
+        .btn {
+            font-size: clamp(14px, 1.6vh, 20px);
+            padding: 0.6vh 2vw;
+        }
+        .poem-box {
+            flex: 0 0 auto;
+            padding: 1.5vh 1.5vw;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 10vh;
+            overflow-y: auto;
+        }
+        .poem-box strong { font-size: clamp(13px, 1.5vh, 18px); }
+        .poem-box #poemContent {
+            font-size: clamp(14px, 1.8vh, 22px);
+            color: #2c3e50;
+            display: block;
+            margin-top: 0.5vh;
+        }
+        #map {
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 30vh;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .btn-group {
+            display: flex;
+            gap: 0.8vw;
+            flex-wrap: wrap;
+        }
+        .btn-group .btn { flex: 0 1 auto; }
+        .footer-link {
+            font-size: clamp(11px, 1.2vh, 14px);
+            color: #999;
+            text-decoration: none;
+        }
         .footer-link:hover { color: #666; }
+        .mt-auto { margin-top: auto; }
+
+        /* 引导弹窗样式 */
+        #apiGuideOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+        #apiGuideOverlay.active {
+            display: flex;
+        }
+        .guide-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3vh 3vw;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .guide-card h2 {
+            color: #1a5276;
+            margin-bottom: 1.5vh;
+            font-size: clamp(20px, 3vh, 32px);
+        }
+        .guide-card .step {
+            background: #f8f9fa;
+            padding: 1.2vh 1.2vw;
+            border-radius: 10px;
+            margin-bottom: 1vh;
+            border-left: 4px solid #1e90ff;
+        }
+        .guide-card .step .num {
+            display: inline-block;
+            background: #1e90ff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+        .guide-card code {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            word-break: break-all;
+        }
+        .guide-card .btn-primary {
+            width: 100%;
+            padding: 1.2vh 0;
+            font-size: clamp(16px, 1.8vh, 22px);
+        }
+        .guide-card .btn-outline-secondary {
+            margin-top: 1vh;
+        }
+        .guide-card .hint {
+            font-size: clamp(12px, 1.3vh, 15px);
+            color: #6c757d;
+            margin-top: 1.5vh;
+        }
+
+        @media (max-width: 768px) {
+            .row { flex-direction: column; }
+            .col-left, .col-right { flex: 1 1 auto; min-width: unset; }
+            .col-left { max-height: 50vh; }
+            .col-right { min-height: 40vh; }
+            textarea.form-control { height: 12vh; }
+            #map { min-height: 30vh; }
+            .guide-card { padding: 2vh 4vw; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container-fluid">
     <h1 class="text-center">🌊 EchoCast · 漂流信</h1>
-    <p class="text-center text-muted">写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海</p>
+    <p class="text-center text-muted subtitle">写下此刻的心情，AI 会把它变成一首诗，扔进世界的大海</p>
 
     <div class="row">
-        <div class="col-md-6">
-            <textarea id="inputText" class="form-control" rows="3" placeholder="此刻，你最想对世界说什么？"></textarea>
-            <div class="mt-2">
+        <div class="col-left">
+            <textarea id="inputText" class="form-control" placeholder="此刻，你最想对世界说什么？"></textarea>
+            <div class="btn-group">
                 <button id="submitBtn" class="btn btn-primary">投入大海</button>
                 <button id="pickBtn" class="btn btn-secondary">捡起一个瓶子</button>
             </div>
             <div class="poem-box">
-                <strong>📜 你捡到的诗：</strong><br>
-                <span id="poemContent" style="font-size: 1.1rem; color: #2c3e50;">点击“捡起一个瓶子”试试</span>
+                <strong>📜 你捡到的诗：</strong>
+                <span id="poemContent">点击“捡起一个瓶子”试试</span>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-right">
             <div id="map"></div>
         </div>
     </div>
 
-    <!-- 关闭服务的链接（无黑框模式下使用） -->
-    <div class="text-center mt-4">
+    <div class="text-center mt-auto" style="padding-top: 1vh;">
         <a href="/shutdown" class="footer-link">点击此处关闭服务</a>
     </div>
 </div>
 
+<!-- 密钥引导弹窗 -->
+<div id="apiGuideOverlay">
+    <div class="guide-card">
+        <h2>🔑 首次使用需要配置 API 密钥</h2>
+        <p style="color: #6c757d; font-size: clamp(13px, 1.4vh, 17px);">
+            EchoCast 使用智谱 AI 的 <strong>永久免费</strong> 模型，只需 2 分钟注册即可获取密钥。
+        </p>
+
+        <div class="step">
+            <div><span class="num">1</span> 访问 <a href="https://open.bigmodel.cn/" target="_blank">智谱AI开放平台</a> 注册账号</div>
+        </div>
+        <div class="step">
+            <div><span class="num">2</span> 进入控制台 → API Keys → 创建新的 API Key</div>
+        </div>
+        <div class="step">
+            <div><span class="num">3</span> 在软件所在文件夹创建 <code>.env</code> 文件，写入：</div>
+            <code style="display:block; margin-top:6px; background:#1a1a2e; color:#e0e0e0; padding:8px 12px; border-radius:6px;">
+                ZHIPU_API_KEY=sk-你的密钥
+            </code>
+        </div>
+        <div class="step" style="border-left-color: #28a745;">
+            <div><span class="num" style="background:#28a745;">✓</span> 保存文件后，点击下方按钮重新连接</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="checkApiAndReload()">🔄 已配置，重新连接</button>
+        <button class="btn btn-outline-secondary btn-sm" style="width:100%;" onclick="copyExample()">📋 复制 .env 示例内容</button>
+        <div class="hint">
+            💡 <strong>完全免费</strong>：智谱 glm-4-flash 模型永久免费，<br>
+            且密钥仅保存在您本地，绝不会泄露。
+        </div>
+    </div>
+</div>
+
 <script>
-    // 初始化世界地图
-    var map = L.map('map').setView([20, 0], 2);
+    // 初始化地图
+    var map = L.map('map', { center: [20, 0], zoom: 2 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
     var marker = null;
+    var apiAvailable = false;
+
+    // 窗口变化时刷新地图
+    window.addEventListener('resize', function() {
+        setTimeout(function() { map.invalidateSize(); }, 100);
+    });
 
     function displayMessage(data) {
-        if (marker) {
-            map.removeLayer(marker);
-        }
+        if (marker) { map.removeLayer(marker); }
         document.getElementById('poemContent').innerText = data.poem || '（空）';
         if (data.lat && data.lng) {
             marker = L.marker([data.lat, data.lng]).addTo(map)
                 .bindPopup(data.poem || '漂流信')
                 .openPopup();
             map.setView([data.lat, data.lng], 5);
+            setTimeout(function() { map.invalidateSize(); }, 200);
         }
+    }
+
+    function checkApiAndReload() {
+        document.getElementById('apiGuideOverlay').classList.remove('active');
+        window.location.reload();
+    }
+
+    function copyExample() {
+        const text = 'ZHIPU_API_KEY=sk-你的密钥';
+        navigator.clipboard.writeText(text).then(() => {
+            alert('✅ 已复制到剪贴板，请粘贴到 .env 文件中');
+        }).catch(() => {
+            // 降级方案
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('✅ 已复制到剪贴板，请粘贴到 .env 文件中');
+        });
+    }
+
+    // ---------- 启动时检测 API ----------
+    function init() {
+        fetch('/check_api')
+            .then(res => res.json())
+            .then(data => {
+                if (data.available) {
+                    apiAvailable = true;
+                    // 正常加载，自动捞一个
+                    pickRandom();
+                } else {
+                    // 显示引导弹窗
+                    document.getElementById('apiGuideOverlay').classList.add('active');
+                }
+            })
+            .catch(() => {
+                // 网络错误时也显示弹窗
+                document.getElementById('apiGuideOverlay').classList.add('active');
+            });
     }
 
     function pickRandom() {
@@ -75,15 +313,22 @@
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    alert(data.error);
+                    document.getElementById('poemContent').innerText = '⚠️ ' + data.error;
                 } else {
                     displayMessage(data);
                 }
             })
-            .catch(err => alert('出错啦：' + err));
+            .catch(err => {
+                document.getElementById('poemContent').innerText = '⚠️ 网络错误，请重试';
+            });
     }
 
     function submitMessage() {
+        if (!apiAvailable) {
+            alert('⚠️ API 未配置，请先配置 ZHIPU_API_KEY');
+            document.getElementById('apiGuideOverlay').classList.add('active');
+            return;
+        }
         var text = document.getElementById('inputText').value.trim();
         if (!text) {
             alert('写点什么再扔吧');
@@ -97,7 +342,10 @@
         .then(res => res.json())
         .then(data => {
             if (data.error) {
-                alert(data.error);
+                alert('⚠️ ' + data.error);
+                if (data.error.includes('API') || data.error.includes('密钥')) {
+                    document.getElementById('apiGuideOverlay').classList.add('active');
+                }
             } else {
                 alert('✨ 你的信已变成诗，漂向大海！');
                 document.getElementById('inputText').value = '';
@@ -110,8 +358,11 @@
     document.getElementById('submitBtn').addEventListener('click', submitMessage);
     document.getElementById('pickBtn').addEventListener('click', pickRandom);
 
-    // 页面一打开自动捞一个
-    window.onload = pickRandom;
+    // 页面加载后先检测
+    window.onload = function() {
+        init();
+        setTimeout(function() { map.invalidateSize(); }, 500);
+    };
 </script>
 </body>
 </html>
