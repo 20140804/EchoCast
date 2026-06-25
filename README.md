@@ -1,6 +1,6 @@
-# 🌊 EchoCast · 漂流信
+# 🌊 EchoCast · Echo Drift
 
-> 不是社交，是偶遇。在赛博空间的海边，做一个扔瓶子的人。
+> Not social media, but serendipity. Be the one who throws a bottle into the cyber sea.
 
 [![GitHub stars](https://img.shields.io/github/stars/20140804/EchoCast)](https://github.com/20140804/EchoCast/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/20140804/EchoCast)](https://github.com/20140804/EchoCast/network)
@@ -9,107 +9,167 @@
 
 ---
 
-## 📖 简介
+## 📖 Introduction
 
-**EchoCast** 是一个轻量级的匿名诗意漂流瓶应用。你只需写下一瞬间的念头，AI（智谱 GLM-4-Flash）会将它重构成一首短诗，并随机抛掷在地球的某个经纬度坐标上。而另一个陌生人，可以通过地图，随机捞起这段来自远方的匿名回声。
+**EchoCast** is a lightweight, anonymous poetic message-in-a-bottle app. You simply write down a passing thought, and AI (powered by Zhipu GLM-4-Flash) transforms it into a short poem, then tosses it to a random latitude/longitude coordinate on the globe. Another stranger, somewhere else, can randomly pick up your anonymous message and see it appear on a world map.
 
-**这个世界不缺效率工具，缺的是不期而遇的浪漫。**
-
-## ✨ 核心功能
-
-- 🗺️ **地图锚定**：每一封信都是一个真实世界地图上的坐标点。
-- 🤖 **AI 赋诗**：使用智谱 AI 的免费模型 `glm-4-flash`，将大白话改写成有意境的短诗（**永久免费**）。
-- 🎭 **绝对匿名**：不注册、不登录、不留痕，只有纯粹的文字偶遇。
-- 📦 **开箱即用**：打包为独立的 EXE 桌面应用，双击即用，无需安装 Python。
-
-## 🛠️ 技术栈
-
-| 类别 | 技术 |
-|------|------|
-| 后端 | Python 3.8+ / Flask |
-| AI 接口 | 智谱 AI (GLM-4-Flash) 兼容 OpenAI SDK |
-| 前端地图 | Leaflet.js + OpenStreetMap |
-| 桌面框架 | PyQt5 + QWebEngineView |
-| 数据库 | SQLite（零配置，单文件） |
-| 打包工具 | PyInstaller（生成独立 EXE） |
+**This world has enough productivity tools; what it lacks is unexpected romance.**
 
 ---
 
-## 🚀 快速开始
+## ✨ Core Features
 
-### 第一步：下载软件
-
-前往 [Releases](https://github.com/20140804/EchoCast/releases) 页面下载 `EchoCast.exe`。
-
-### 第二步：获取免费的 API 密钥（关键步骤）
-
-EchoCast 使用智谱 AI 的 `glm-4-flash` 模型，该模型**永久免费**。你只需要花 2 分钟注册并获取一个密钥。
-
-1. 访问 [智谱AI开放平台](https://open.bigmodel.cn/) 注册账号。
-2. 登录后，进入 **控制台** → **API Keys**。
-3. 点击 **创建新的 API Key**，复制生成的密钥（格式为 `sk-xxxxxx`）。
-
-### 第三步：配置密钥
-
-1. 将 `EchoCast.exe` 放在一个独立的文件夹中。
-2. 在**同一文件夹**中，创建一个名为 `.env` 的文件（注意文件名以点开头）。
-3. 用记事本打开 `.env`，写入以下内容：
-   ```
-   ZHIPU_API_KEY=你的密钥ID
-   ```
-   将 `sk-你的密钥` 替换为刚才复制的真实密钥。
-
-### 第四步：运行
-
-双击 `EchoCast.exe`，软件会自动打开。首次运行时会检测密钥，如果未配置，会显示引导弹窗帮助你完成配置。
+- 🗺️ **Geolocated messages**: Every letter is pinned to a real-world coordinate on the map.
+- 🤖 **AI-powered poetry**: Uses Zhipu AI's free `glm-4-flash` model to turn plain text into poetic verse (**permanently free**).
+- 🎭 **Fully anonymous**: No sign-up, no login, no trace. Only pure words and chance encounters.
+- 📦 **Ready to run**: Packaged as a standalone EXE desktop application – double-click to launch, no Python installation required.
 
 ---
 
-## 🧭 使用说明
+## 🆓 Free vs Pro
 
-| 操作 | 说明 |
-|------|------|
-| 写下心情 → 投入大海 | 输入文字，AI 会将其改写成诗，并随机投放到地图某处 |
-| 捡起一个瓶子 | 从数据库中随机捞取别人的诗，地图自动定位到该位置 |
-| 关闭服务 | 点击窗口底部的「点击此处关闭服务」链接 |
+| Feature | Free | Pro |
+|---------|------|-----|
+| AI Poetry (Chinese) | ✅ | ✅ |
+| AI Poetry (English) | ❌ | ✅ |
+| 4 Poetry Styles | ❌ (Default only) | ✅ |
+| One-Click Copy | ❌ | ✅ |
+| Export as PNG | ❌ | ✅ |
+| My History | ❌ | ✅ |
+| License Key Activation | ❌ | ✅ |
 
----
-
-## ❓ 常见问题
-
-### 1. 双击 EXE 没反应？
-请查看 EXE 同级目录下的 `debug.txt` 文件，里面记录了详细的启动日志和错误信息。
-
-### 2. 为什么提示“未配置 API 密钥”？
-您还没有配置 `.env` 文件。请按照“快速开始”中的指引，注册智谱 AI 账号并获取密钥，然后创建 `.env` 文件。
-
-### 3. 智谱 AI 真的免费吗？
-是的！`glm-4-flash` 模型**永久免费，不限量**。您只需注册账号即可使用，不会有任何费用。
-
-### 4. 我的密钥安全吗？
-**非常安全！** 密钥只保存在您本地的 `.env` 文件中，软件不会上传您的密钥，也不会泄露给任何第三方。您完全可以放心。
-
-### 5. 杀毒软件报毒？
-PyInstaller 打包的单文件 EXE 容易被误报。请将其添加到杀毒软件白名单，或使用 `--onedir` 模式重新打包（误报率更低）。
+**Pro Version: 9.9 RMB (~$1.99 USD) — Lifetime License**
 
 ---
 
-## 🤝 贡献
+## 🔑 How to Get Pro
 
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
-
----
-
-## 📄 开源协议
-
-本项目采用 [MIT License](LICENSE) 协议，你可以自由使用、修改、商用，只需保留原始版权声明。
+1. Download the free version from [Releases](https://github.com/20140804/EchoCast/releases)
+2. Contact the developer to purchase a Pro license:
+   - **WeChat:** [Your WeChat ID]
+   - **Email:** [your email]
+   - **Platform:** 爱发电 / 闲鱼 (search "EchoCast")
+3. After payment, you will receive a `license.key` file
+4. Place `license.key` in the same folder as `EchoCast.exe`
+5. Restart the software — Pro features unlock automatically! 🚀
 
 ---
 
-**愿你在 EchoCast 里，偶遇世界另一端的柔软。** 🌊
+## 🚀 Quick Start
+
+### Step 1: Download the Software
+
+Go to the [Releases](https://github.com/20140804/EchoCast/releases) page and download `EchoCast.exe`.
+
+### Step 2: Get Your Free API Key (Critical Step)
+
+EchoCast uses Zhipu AI's `glm-4-flash` model, which is **permanently free**. You only need to spend 2 minutes signing up and getting a key.
+
+1. Visit [Zhipu AI Open Platform](https://open.bigmodel.cn/) and register an account.
+2. After logging in, go to **Console** → **API Keys**.
+3. Click **Create New API Key** and copy the generated key (format: `sk-xxxxxx`).
+
+### Step 3: Configure the Key
+
+1. Place `EchoCast.exe` in a separate folder.
+2. In the **same folder**, create a file named `.env` (note the leading dot).
+3. Open `.env` with Notepad and write the following:
+ZHIPU_API_KEY=your-api-key-here
+Replace `your-api-key-here` with the actual key you just copied.
+
+### Step 4: Run
+
+Double-click `EchoCast.exe` and the software will open automatically. On first run, it will detect the key – if not configured, a guided popup will help you complete the setup.
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Backend | Python 3.8+ / Flask |
+| AI API | Zhipu AI (GLM-4-Flash) via OpenAI-compatible SDK |
+| Frontend Map | Leaflet.js + OpenStreetMap |
+| Desktop Framework | PyQt5 + QWebEngineView |
+| Database | SQLite (zero-config, single file) |
+| Packaging | PyInstaller (generates standalone EXE) |
+
+---
+
+## 🧭 How to Use
+
+| Action | Description |
+|--------|-------------|
+| Write your thought → Throw into the sea | Enter text – AI will turn it into a poem and drop it at a random location on the map |
+| Pick up a bottle | Randomly fetch someone else's poem from the database – the map will zoom to its location |
+| Shut down the server | Click the "Click here to shutdown" link at the bottom of the window |
+
+### Pro Only: Language & Style
+
+- **Language:** Choose Chinese or English for AI poetry
+- **Style:** 4 styles — Default / Classical Chinese / Modern / Haiku
+- **Copy:** One-click copy any poem
+- **Export:** Save poetry as PNG image
+- **History:** View all your thrown bottles
+
+---
+
+## ❓ FAQ
+
+### 1. Nothing happens when I double-click the EXE?
+Check the `debug.txt` file in the same directory – it logs all startup details and error messages.
+
+### 2. Why does it say "API key not configured"?
+You haven't set up the `.env` file yet. Follow the "Quick Start" guide to register for a Zhipu AI account, get a key, and create the `.env` file.
+
+### 3. Is Zhipu AI really free?
+Yes! The `glm-4-flash` model is **permanently free and unlimited**. You just need to register an account – no charges will ever apply.
+
+### 4. Is my key secure?
+**Very secure!** The key is stored only in your local `.env` file. The software never uploads your key or leaks it to any third party. You can rest assured.
+
+### 5. Antivirus flags the EXE as suspicious?
+PyInstaller single-file EXEs are often falsely flagged. Please add it to your antivirus whitelist, or repackage using the `--onedir` mode (which has a lower false-positive rate).
+
+### 6. How do I activate Pro?
+Place the `license.key` file in the same folder as `EchoCast.exe` and restart the software. Pro features will unlock automatically.
+
+---
+
+## 💰 Pro Version Purchase
+
+| Region | Price | Payment Methods |
+|--------|-------|-----------------|
+| China | 9.9 RMB | WeChat / Alipay / 爱发电 / 闲鱼 |
+| Global | ~$1.99 USD | Coming soon (PayPal) |
+
+**Contact to purchase:**
+- **WeChat:** [Your WeChat ID]
+- **Email:** [Your Email]
+- **GitHub Issues:** https://github.com/20140804/EchoCast/issues
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+1. Fork this repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) – you are free to use, modify, and distribute it commercially, as long as you retain the original copyright notice.
+
+---
+## If you want to talk with me about the features, Welcome!! 
+Offical Email: EchoCast_Offical@hotmail.com
+## If you want to Buy Pro version, please send an email to this:
+Buy Pro Version Email:EchoCast_BuyPro@outlook.com
+---
+**May you encounter the softness from the other side of the world in EchoCast.** 🌊
