@@ -46,8 +46,8 @@
 
 1. Download the free version from [Releases](https://github.com/20140804/EchoCast/releases)
 2. Contact the developer to purchase a Pro license:
-   - **WeChat:** [Your WeChat ID]
-   - **Email:** [your email]
+   - **WeChat:** [GreatFrostPiercePro]
+   - **Email:** [EchoCast_BuyPro@hotmail.com]
    - **Platform:** 爱发电 / 闲鱼 (search "EchoCast")
 3. After payment, you will receive a `license.key` file
 4. Place `license.key` in the same folder as `EchoCast.exe`
@@ -144,8 +144,8 @@ Place the `license.key` file in the same folder as `EchoCast.exe` and restart th
 | Global | ~$1.99 USD | Coming soon (PayPal) |
 
 **Contact to purchase:**
-- **WeChat:** [Your WeChat ID]
-- **Email:** [Your Email]
+- **WeChat:** [GreatFrostPiercePro]
+- **Email:** [EchoCast_BuyPro@hotmail.com]
 - **GitHub Issues:** https://github.com/20140804/EchoCast/issues
 
 ---
